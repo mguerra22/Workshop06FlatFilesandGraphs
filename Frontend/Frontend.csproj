@@ -9,10 +9,14 @@
 
   <ItemGroup>
     <None Remove="city.txt" />
+    <None Remove="packages.txt" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="city.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="packages.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
