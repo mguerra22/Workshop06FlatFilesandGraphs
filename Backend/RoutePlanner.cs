@@ -102,6 +102,172 @@ public class RoutePlanner
 
         return route;
     }
+    public List<Stop> PlanByInsertion()
+    {
+        var route = new List<Stop>();
+
+        foreach (Package package in _packages)
+        {
+            var pickup = new Stop(
+                package.Pickup,
+                StopKind.Pickup,
+                package.Id);
+
+            var delivery = new Stop(
+                package.Delivery,
+                StopKind.Delivery,
+                package.Id);
+
+            List<Stop>? bestRoute = null;
+            double bestDistance = double.PositiveInfinity;
+
+            for (int pickupIndex = 0;
+                 pickupIndex <= route.Count;
+                 pickupIndex++)
+            {
+                var routeWithPickup = new List<Stop>(route);
+                routeWithPickup.Insert(pickupIndex, pickup);
+
+                for (int deliveryIndex = pickupIndex + 1;
+                     deliveryIndex <= routeWithPickup.Count;
+                     deliveryIndex++)
+                {
+                    var candidate = new List<Stop>(routeWithPickup);
+                    candidate.Insert(deliveryIndex, delivery);
+
+                    double distance = TotalDistance(candidate);
+
+                    if (distance < bestDistance)
+                    {
+                        bestDistance = distance;
+                        bestRoute = candidate;
+                    }
+                }
+            }
+
+            if (bestRoute is null)
+                throw new InvalidOperationException(
+                    "Could not insert package into the route.");
+
+            route = bestRoute;
+        }
+
+        return route;
+    }
+
+
+    public List<Stop> ImproveByRelocation(List<Stop> initialRoute)
+    {
+        var route = new List<Stop>(initialRoute);
+        bool improved;
+
+        do
+        {
+            improved = false;
+
+            foreach (Package package in _packages)
+            {
+                var baseRoute = route
+                    .Where(stop => stop.PackageId != package.Id)
+                    .ToList();
+
+                List<Stop>? bestRoute = null;
+                double bestDistance = TotalDistance(route);
+
+                var pickup = new Stop(
+                    package.Pickup,
+                    StopKind.Pickup,
+                    package.Id);
+
+                var delivery = new Stop(
+                    package.Delivery,
+                    StopKind.Delivery,
+                    package.Id);
+
+                for (int pickupIndex = 0;
+                     pickupIndex <= baseRoute.Count;
+                     pickupIndex++)
+                {
+                    var routeWithPickup = new List<Stop>(baseRoute);
+                    routeWithPickup.Insert(pickupIndex, pickup);
+
+                    for (int deliveryIndex = pickupIndex + 1;
+                         deliveryIndex <= routeWithPickup.Count;
+                         deliveryIndex++)
+                    {
+                        var candidate = new List<Stop>(routeWithPickup);
+                        candidate.Insert(deliveryIndex, delivery);
+
+                        double distance = TotalDistance(candidate);
+
+                        if (distance < bestDistance)
+                        {
+                            bestDistance = distance;
+                            bestRoute = candidate;
+                        }
+                    }
+                }
+
+                if (bestRoute is not null)
+                {
+                    route = bestRoute;
+                    improved = true;
+                }
+            }
+
+        } while (improved);
+
+        return route;
+    }
+
+
+    public List<Stop> ImproveByMovingStops(List<Stop> initialRoute)
+    {
+        var route = new List<Stop>(initialRoute);
+        bool improved;
+
+        do
+        {
+            improved = false;
+            double bestDistance = TotalDistance(route);
+            List<Stop>? bestRoute = null;
+
+            for (int i = 0; i < route.Count; i++)
+            {
+                var candidateBase = new List<Stop>(route);
+                Stop stop = candidateBase[i];
+                candidateBase.RemoveAt(i);
+
+                for (int j = 0; j <= candidateBase.Count; j++)
+                {
+                    var candidate = new List<Stop>(candidateBase);
+                    candidate.Insert(j, stop);
+
+                    if (!IsValid(candidate))
+                        continue;
+
+                    double distance = TotalDistance(candidate);
+
+                    if (distance < bestDistance)
+                    {
+                        bestDistance = distance;
+                        bestRoute = candidate;
+                    }
+                }
+            }
+
+            if (bestRoute is not null)
+            {
+                route = bestRoute;
+                improved = true;
+            }
+
+        } while (improved);
+
+        return route;
+    }
+
+
     public bool IsValid(List<Stop> route)
     {
         if (route.Count != _packages.Count * 2)
