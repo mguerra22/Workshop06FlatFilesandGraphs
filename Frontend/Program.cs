@@ -31,24 +31,32 @@ try
 
     List<Stop> nearestRoute = planner.Plan();
     List<Stop> insertionRoute = planner.PlanByInsertion();
-    List<Stop> improvedRoute = planner.ImproveByRelocation(insertionRoute);
+    List<Stop> relocationRoute = planner.ImproveByRelocation(insertionRoute);
+    List<Stop> improvedRoute = planner.ImproveByMovingStops(relocationRoute);
+    List<Stop> randomRoute = planner.PlanWithRandomRestarts(20, 42);
+
 
     double nearestDistance = planner.TotalDistance(nearestRoute);
     double insertionDistance = planner.TotalDistance(insertionRoute);
+    double relocationDistance = planner.TotalDistance(relocationRoute);
     double improvedDistance = planner.TotalDistance(improvedRoute);
+    double randomDistance = planner.TotalDistance(randomRoute);
 
     Console.WriteLine();
     Console.WriteLine("ROUTE COMPARISON");
     Console.WriteLine("----------------");
     Console.WriteLine($"Nearest neighbor: {nearestDistance / 1000.0:F2} km");
     Console.WriteLine($"Insertion: {insertionDistance / 1000.0:F2} km");
-    Console.WriteLine($"Relocation: {improvedDistance / 1000.0:F2} km");
-    Console.WriteLine($"Relocation valid: {planner.IsValid(improvedRoute)}");
+    Console.WriteLine($"Relocation: {relocationDistance / 1000.0:F2} km");
+    Console.WriteLine($"Moving stops: {improvedDistance / 1000.0:F2} km");
+    Console.WriteLine($"Moving stops valid: {planner.IsValid(improvedRoute)}");
+    Console.WriteLine($"Random restarts: {randomDistance / 1000.0:F2} km");
+    Console.WriteLine($"Random restarts valid: {planner.IsValid(randomRoute)}");
 
-    if (!planner.IsValid(improvedRoute))
-        throw new InvalidOperationException("The improved route is invalid.");
+    if (!planner.IsValid(randomRoute))
+        throw new InvalidOperationException("The random route is invalid.");
 
-    RoutePrinter.Print(planner, improvedRoute, "D");
+    RoutePrinter.Print(planner, randomRoute, "D");
 
 
     var shortestPaths = new ShortestPaths<string>(city);

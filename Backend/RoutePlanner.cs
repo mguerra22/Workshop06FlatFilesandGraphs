@@ -104,9 +104,14 @@ public class RoutePlanner
     }
     public List<Stop> PlanByInsertion()
     {
+        return PlanByInsertion(_packages);
+    }
+
+    public List<Stop> PlanByInsertion(IReadOnlyList<Package> packageOrder)
+    {
         var route = new List<Stop>();
 
-        foreach (Package package in _packages)
+        foreach (Package package in packageOrder)
         {
             var pickup = new Stop(
                 package.Pickup,
@@ -267,7 +272,47 @@ public class RoutePlanner
         return route;
     }
 
+    public List<Stop> PlanWithRandomRestarts(int restartCount, int seed)
+    {
+        var random = new Random(seed);
 
+        List<Stop>? bestRoute = null;
+        double bestDistance = double.PositiveInfinity;
+
+        for (int restart = 0; restart < restartCount; restart++)
+        {
+            var packageOrder = _packages.ToList();
+
+            for (int i = packageOrder.Count - 1; i > 0; i--)
+            {
+                int j = random.Next(i + 1);
+
+                (packageOrder[i], packageOrder[j]) =
+                    (packageOrder[j], packageOrder[i]);
+            }
+
+            List<Stop> route = PlanByInsertion(packageOrder);
+            route = ImproveByRelocation(route);
+            route = ImproveByMovingStops(route);
+
+            if (!IsValid(route))
+                continue;
+
+            double distance = TotalDistance(route);
+
+            if (distance < bestDistance)
+            {
+                bestDistance = distance;
+                bestRoute = route;
+            }
+        }
+
+        if (bestRoute is null)
+            throw new InvalidOperationException(
+                "No valid route was found during random restarts.");
+
+        return bestRoute;
+    }
     public bool IsValid(List<Stop> route)
     {
         if (route.Count != _packages.Count * 2)
