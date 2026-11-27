@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Frontend": {
+      "commandName": "Project",
+      "commandLineArgs": "city.txt packages.txt D"
+    }
+  }
+}

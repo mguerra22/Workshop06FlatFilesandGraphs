@@ -3,12 +3,18 @@ using Backend;
 
 try
 {
-    string cityPath = Path.Combine(AppContext.BaseDirectory, "city.txt");
+    string cityFileName = args.Length > 0 ? args[0] : "city.txt";
+    string packagesFileName = args.Length > 1 ? args[1] : "packages.txt";
+    string startLocation = args.Length > 2 ? args[2] : "D";
+
+    string cityPath = Path.Combine(
+        AppContext.BaseDirectory, cityFileName);
 
     var cityFile = new CityFile();
     var city = cityFile.Load(cityPath);
-        string packagesPath = Path.Combine(
-        AppContext.BaseDirectory, "packages.txt");
+
+    string packagesPath = Path.Combine(
+        AppContext.BaseDirectory, packagesFileName);
 
     var packageFile = new PackageFile();
     List<Package> packages = packageFile.Load(packagesPath, city);
@@ -27,7 +33,7 @@ try
     Console.WriteLine($"Tasks: {packages.Count * 2}");
 
 
-    var planner = new RoutePlanner(city, packages, "D");
+    var planner = new RoutePlanner(city, packages, startLocation);
 
     List<Stop> nearestRoute = planner.Plan();
     List<Stop> insertionRoute = planner.PlanByInsertion();
@@ -56,24 +62,29 @@ try
     if (!planner.IsValid(randomRoute))
         throw new InvalidOperationException("The random route is invalid.");
 
-    RoutePrinter.Print(planner, randomRoute, "D");
+    RoutePrinter.Print(planner, randomRoute, startLocation);
 
 
-    var shortestPaths = new ShortestPaths<string>(city);
 
-    shortestPaths.Calculate("D");
+    if (city.ContainsVertex("H"))
+    {
+        var shortestPaths = new ShortestPaths<string>(city);
 
-    double distance = shortestPaths.GetDistance("H");
-    List<string> path = shortestPaths.GetPath("H");
+        shortestPaths.Calculate("D");
 
-    Console.WriteLine();
-    Console.WriteLine("SHORTEST PATH TEST");
-    Console.WriteLine("------------------");
-    Console.WriteLine($"Origin: D");
-    Console.WriteLine($"Destination: H");
-    Console.WriteLine($"Path: {string.Join(" -> ", path)}");
-    Console.WriteLine($"Distance: {distance} meters");
-    Console.WriteLine($"Distance: {distance / 1000.0:F3} km");
+        double distance = shortestPaths.GetDistance("H");
+        List<string> path = shortestPaths.GetPath("H");
+
+        Console.WriteLine();
+        Console.WriteLine("SHORTEST PATH TEST");
+        Console.WriteLine("------------------");
+        Console.WriteLine("Origin: D");
+        Console.WriteLine("Destination: H");
+        Console.WriteLine($"Path: {string.Join(" -> ", path)}");
+        Console.WriteLine($"Distance: {distance} meters");
+        Console.WriteLine($"Distance: {distance / 1000.0:F3} km");
+    }
+
 
 }
 catch (Exception ex)

@@ -1,5 +1,4 @@
-﻿// Backend/Graph.cs
-namespace Backend;
+﻿namespace Backend;
 
 /// <summary>
 /// Graph stored as an adjacency list: every vertex maps to the list of edges that leave it.
